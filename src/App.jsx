@@ -170,7 +170,11 @@ function BookAppointment({ doctors, token, onBook }) {
     if (!form.doctorId || !form.date || !form.time || !form.reason.trim()) { setError("Please complete all fields."); return; }
     setLoading(true);
     try {
-      const scheduled_at = `${form.date}T${form.time}:00`;
+      const dateObj = new Date(form.date);
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+    const scheduled_at = `${yyyy}-${mm}-${dd}T${form.time}:00`;
       const appt = await apiFetch(`/api/appointments/book/${form.doctorId}/`, { method: "POST", body: JSON.stringify({ scheduled_at, reason: form.reason }) }, token);
       onBook(appt);
       setSuccess(true);
@@ -280,11 +284,20 @@ export default function App() {
 
   useEffect(() => {
     if (!token) return;
-    apiFetch("/api/doctors/", {}, token).then(setDoctors).catch(console.error);
-    apiFetch("/api/appointments/", {}, token).then(setAppointments).catch(console.error);
+    console.log("Fetching with token:", token);
+    apiFetch("/api/doctors/", {}, token)
+      .then(data => { console.log("Doctors:", data); setDoctors(data); })
+      .catch(err => console.error("Doctors error:", err));
+    apiFetch("/api/appointments/", {}, token)
+      .then(setAppointments)
+      .catch(console.error);
   }, [token]);
 
-  function handleLogin(user, tok) { setPatient(user); setToken(tok); }
+  function handleLogin(user, tok) { 
+    console.log("Login called with token:", tok);
+    setPatient(user); 
+    setToken(tok); 
+}
   function handleLogout() {
     apiFetch("/api/logout/", { method: "POST" }, token).catch(() => {});
     setPatient(null); setToken(null); setPage("dashboard");
